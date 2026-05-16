@@ -14,6 +14,7 @@ import os
 import random
 import sys
 import time
+import traceback
 import tkinter as tk
 from collections import deque
 from pathlib import Path
@@ -37,10 +38,18 @@ REQUIRED_ACTIONS = ("idle", "walk", "drink", "typing")
 OPTIONAL_ACTIONS = ("focus", "done")
 CLICK_SEQUENCE = ("walk", "drink", "typing")
 FOCUS_SECONDS = int(os.environ.get("PET_FOCUS_SECONDS", str(60 * 60)))
+LOG_PATH = Path(os.environ.get("USERPROFILE", str(Path.home()))) / "Desktop" / "PixelPersonPet-debug.log"
 
 
 def debug(message: str) -> None:
-    print(message, flush=True)
+    line = f"{time.strftime('%Y-%m-%d %H:%M:%S')} {message}"
+    try:
+        LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with LOG_PATH.open("a", encoding="utf-8") as log:
+            log.write(line + "\n")
+    except Exception:
+        pass
+    print(line, flush=True)
 
 
 def is_checker_pixel(pixel: tuple[int, int, int]) -> bool:
@@ -89,12 +98,3 @@ def remove_edge_checkerboard(image: Image.Image) -> Image.Image:
         padding = 12
         rgba = rgba.crop(
             (
-                max(0, left - padding),
-                max(0, top - padding),
-                min(width, right + padding),
-                min(height, bottom + padding),
-            )
-        )
-
-    scale = TARGET_HEIGHT / rgba.height
-    return rgba.resize((max(1, round(rgba.width * scale)), TARGET_HEIGHT), Image.Resampling.LANCZOS)
